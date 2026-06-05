@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sequential Conjugation Demo</title>
+  <style>
+    :root {
+      --ink: #252c40;
+      --muted: #9ea3ad;
+      --light-muted: #d9dde6;
+      --blue: #2f66f5;
+      --blue-soft: #b9cbff;
+      --yellow: #ffe27a;
+      --green: #29ce79;
+      --green-bg: #bff0d9;
+      --red: #ef4f59;
+      --red-bg: #ffd4d7;
+      --panel: #ffffff;
+      --answer-gap: clamp(14px, calc((100svh - 720px) * .2), 28px);
+      --continue-hotspot-top: calc(602px + var(--answer-gap));
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100svh;
+      color: var(--ink);
+      font-family: Inter, ui-rounded, "SF Pro Rounded", "Nunito", Arial, sans-serif;
+      background: #fff;
+      display: flex;
+      justify-content: center;
+    }
+
+    .phone {
+      width: min(100vw, 430px);
+      min-height: 100vh;
+      min-height: 100svh;
+      background: linear-gradient(#ffe8a8 0 21%, #fff8e5 21% 22%, #fff 22%);
+      position: relative;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .phone.prep-mode {
+      background: linear-gradient(#ffe8a8 0 38%, #fff8e5 38% 40%, #fff 40%);
+    }
+
+    .phone.prep-mode .exercise-top,
+    .phone.prep-mode .board-wrap {
+      display: none;
+    }
+
+    .phone:not(.prep-mode) .prep-screen {
+      display: none;
+    }
+
+    .top {
+      height: 186px;
+      padding: 14px 18px 0;
+      position: relative;
+    }
+
+    .prep-screen {
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .prep-top {
+      min-height: 390px;
+      padding: 14px 18px 0;
+      position: relative;
+    }
+
+    .prep-mascot {
+      left: 50%;
+      bottom: 54px;
+      transform: translateX(-50%) scale(1.32);
+    }
+
+    .prep-speech {
+      left: 50%;
+      right: auto;
+      top: 230px;
+      transform: translateX(-50%);
+      width: 292px;
+    }
+
+    .prep-actions {
+      position: absolute;
+      left: 36px;
+      right: 36px;
+      top: var(--continue-hotspot-top);
+      padding: 0;
+    }
+
+    .hud {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 42px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .back {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 50%;
+      background: #fff;
+      color: #777b8c;
+      font-size: 32px;
+      line-height: 30px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 8px rgba(68, 73, 93, .08);
+    }
+
+    .progress {
+      height: 28px;
+      flex: 1;
+      border-radius: 999px;
+      background: #dedede;
+      border: 4px solid #fff;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, .16);
+      overflow: hidden;
+    }
+
+    .bar {
+      width: 30%;
+      height: 100%;
+      background: linear-gradient(90deg, #45e9a2, #22d58d);
+      border-radius: inherit;
+    }
+
+    .lives {
+      width: 80px;
+      height: 34px;
+      border-radius: 999px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      font-weight: 900;
+      box-shadow: 0 4px 12px rgba(58, 43, 34, .12);
+    }
+
+    .heart {
+      width: 27px;
+      height: 27px;
+      transform: rotate(-45deg);
+      background: linear-gradient(135deg, #ff7c94, #ff315a);
+      border-radius: 8px 8px 3px 8px;
+      position: relative;
+      box-shadow: 0 0 0 3px #fff;
+    }
+
+    .heart::before,
+    .heart::after {
+      content: "";
+      position: absolute;
+      width: 27px;
+      height: 27px;
+      background: inherit;
+      border-radius: 50%;
+    }
+
+    .heart::before {
+      top: -13px;
+      left: 0;
+    }
+
+    .heart::after {
+      left: 13px;
+      top: 0;
+    }
+
+    .mascot {
+      position: absolute;
+      left: 18px;
+      bottom: -4px;
+      width: 128px;
+      height: 122px;
+    }
+
+    .hat {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      width: 118px;
+      height: 36px;
+      background: #202027;
+      border-radius: 50%;
+      transform: rotate(-13deg);
+      box-shadow: inset 0 -5px 0 rgba(255, 255, 255, .16);
+    }
+
+    .face {
+      position: absolute;
+      left: 34px;
+      top: 38px;
+      width: 72px;
+      height: 68px;
+      border-radius: 43% 43% 50% 50%;
+      background: #8f8580;
+    }
+
+    .ear-left,
+    .ear-right {
+      position: absolute;
+      top: 48px;
+      width: 36px;
+      height: 55px;
+      background: #f6f6f6;
+      border-radius: 50%;
+    }
+
+    .ear-left {
+      left: 12px;
+    }
+
+    .ear-right {
+      right: 4px;
+    }
+
+    .eye {
+      position: absolute;
+      top: 56px;
+      width: 25px;
+      height: 25px;
+      background: white;
+      border: 5px solid #5e3834;
+      border-radius: 50%;
+      z-index: 2;
+    }
+
+    .eye.left {
+      left: 47px;
+    }
+
+    .eye.right {
+      left: 72px;
+    }
+
+    .eye::after {
+      content: "";
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #111;
+      right: 3px;
+      bottom: 2px;
+    }
+
+    .body {
+      position: absolute;
+      left: 42px;
+      bottom: 0;
+      width: 58px;
+      height: 34px;
+      background: #fbfbfb;
+      border-bottom: 13px solid #111;
+      border-radius: 12px 12px 6px 6px;
+    }
+
+    .speech {
+      position: absolute;
+      right: 18px;
+      top: 72px;
+      width: 244px;
+      height: 92px;
+      background: #fff;
+      border: 5px solid #ffd66f;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .board-wrap {
+      border-radius: 14px 14px 0 0;
+      background: #fff;
+      padding: 22px 18px 0;
+      min-height: calc(100vh - 186px);
+    }
+
+    .board {
+      position: relative;
+      background: var(--blue-soft);
+      border-radius: 10px;
+      padding: 50px 14px 14px;
+    }
+
+    .learn-label {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      min-width: 72px;
+      height: 30px;
+      padding: 0 14px;
+      border-radius: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, .68);
+      color: #1562f4;
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border-radius: 9px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .example-card {
+      margin-bottom: 0;
+      min-height: 106px;
+      padding: 12px 8px 10px;
+    }
+
+    .stem {
+      color: #b6bac2;
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+
+    .stem strong {
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .example-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1px 1fr;
+      align-items: center;
+    }
+
+    .divider {
+      width: 1px;
+      height: 56px;
+      background: var(--light-muted);
+    }
+
+    .sample {
+      text-align: center;
+    }
+
+    .word {
+      font-size: 34px;
+      line-height: 1;
+      color: #7d828c;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    .word strong {
+      font-weight: inherit;
+    }
+
+    .ending-i {
+      color: #7399ff;
+    }
+
+    .ending-you {
+      color: var(--yellow);
+    }
+
+    .translation {
+      margin-top: 9px;
+      color: #9f9f9f;
+      font-size: 15px;
+      line-height: 1.1;
+    }
+
+    .translation .person-i {
+      color: #2167ff;
+    }
+
+    .translation .person-you {
+      color: #f7d419;
+    }
+
+    .question-translation .person-i {
+      color: #2167ff;
+    }
+
+    .question-translation .person-you {
+      color: #f7d419;
+    }
+
+    .question-card {
+      position: relative;
+      margin-top: 14px;
+      min-height: 132px;
+      padding: 18px 18px 14px;
+      border: 1px solid #edf0f6;
+      box-shadow: 0 1px 0 rgba(37, 44, 64, .03);
+      transition: transform .28s ease, opacity .28s ease;
+    }
+
+    .question-card.switching {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+
+    .question-card.correct-pulse {
+      animation: pulse .42s ease;
+    }
+
+    .question-word {
+      min-height: 58px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      color: var(--ink);
+      font-size: 45px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .blank {
+      display: inline-flex;
+      min-width: 32px;
+      justify-content: center;
+      border-bottom: 3px solid currentColor;
+      line-height: .84;
+    }
+
+    .blank.filled {
+      min-width: 0;
+    }
+
+    .question-translation {
+      margin-top: 13px;
+      font-size: 19px;
+      color: #8d8d8d;
+    }
+
+    .question-count {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      color: rgba(37, 44, 64, .32);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .actions {
+      padding: var(--answer-gap) 0 34px;
+    }
+
+    .option,
+    .continue,
+    .reset {
+      width: 100%;
+      height: 68px;
+      border-radius: 14px;
+      border: 1px solid #dde0e8;
+      background: #fff;
+      color: var(--ink);
+      font-size: 32px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color .18s ease, border-color .18s ease, transform .18s ease, color .18s ease, opacity .18s ease;
+    }
+
+    .option + .option {
+      margin-top: 20px;
+    }
+
+    .option:disabled {
+      cursor: default;
+    }
+
+    .option.correct {
+      background: var(--green-bg);
+      border-color: var(--green);
+      color: #064d2e;
+    }
+
+    .option.wrong {
+      background: var(--red-bg);
+      border-color: var(--red);
+      color: #8b1720;
+      animation: shake .36s ease;
+    }
+
+    .continue {
+      display: none;
+      height: 64px;
+      color: white;
+      background: #2d62ed;
+      border: 0;
+      font-size: 19px;
+      text-transform: lowercase;
+    }
+
+    .continue.show {
+      display: flex;
+      animation: rise .28s ease both;
+    }
+
+    .reset {
+      height: 38px;
+      margin-top: 14px;
+      border: 0;
+      background: transparent;
+      color: #8f96a6;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .toast {
+      height: 24px;
+      margin-top: 12px;
+      text-align: center;
+      color: #7d8495;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-9px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(5px); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      45% { transform: scale(1.018); }
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 360px) {
+      .speech {
+        width: 210px;
+        font-size: 16px;
+      }
+
+      .word {
+        font-size: 31px;
+      }
+
+      .question-word {
+        font-size: 39px;
+      }
+
+      .option {
+        height: 62px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="phone prep-mode" aria-label="Sequential conjugation demo">
+    <section id="prepScreen" class="prep-screen" aria-label="Prep screen">
+      <div class="prep-top">
+        <div class="hud">
+          <button class="back" type="button" aria-label="Back">‹</button>
+          <div class="progress" aria-label="Progress"><div class="bar"></div></div>
+          <div class="lives" aria-label="Lives"><span class="heart"></span><span>33</span></div>
+        </div>
+
+        <div class="mascot prep-mascot" aria-hidden="true">
+          <div class="hat"></div>
+          <div class="ear-left"></div>
+          <div class="ear-right"></div>
+          <div class="face"></div>
+          <div class="eye left"></div>
+          <div class="eye right"></div>
+          <div class="body"></div>
+        </div>
+
+        <div class="speech prep-speech">Complete the words:</div>
+      </div>
+
+      <div class="prep-actions">
+        <button id="startBtn" class="continue show" type="button">continue</button>
+      </div>
+    </section>
+
+    <section class="top exercise-top" aria-label="Game header">
+      <div class="hud">
+        <button class="back" type="button" aria-label="Back">‹</button>
+        <div class="progress" aria-label="Progress"><div class="bar"></div></div>
+        <div class="lives" aria-label="Lives"><span class="heart"></span><span>33</span></div>
+      </div>
+
+      <div class="mascot" aria-hidden="true">
+        <div class="hat"></div>
+        <div class="ear-left"></div>
+        <div class="ear-right"></div>
+        <div class="face"></div>
+        <div class="eye left"></div>
+        <div class="eye right"></div>
+        <div class="body"></div>
+      </div>
+
+      <div class="speech">Complete the words:</div>
+    </section>
+
+    <section class="board-wrap">
+      <div class="board">
+        <div class="learn-label">Example</div>
+
+        <article class="card example-card" aria-label="Learning example">
+          <div class="example-grid">
+            <div class="sample">
+              <div class="word">habl<strong class="ending-i">o</strong></div>
+              <div class="translation"><span class="person-i">I</span> speak</div>
+            </div>
+            <div class="divider"></div>
+            <div class="sample">
+              <div class="word">habl<strong class="ending-you">as</strong></div>
+              <div class="translation"><span class="person-you">You</span> speak</div>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <article id="questionCard" class="card question-card" aria-live="polite">
+        <div id="questionWord" class="question-word"></div>
+        <div id="questionTranslation" class="question-translation"></div>
+        <div id="questionCount" class="question-count"></div>
+      </article>
+
+      <section class="actions">
+        <div id="options" aria-label="Answer options"></div>
+        <button id="continueBtn" class="continue" type="button">continue</button>
+        <button id="resetBtn" class="reset" type="button">Reset demo</button>
+        <div id="toast" class="toast" aria-live="polite"></div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        stem: "tomar",
+        base: "tom",
+        answer: "o",
+        translation: ["I", "take"],
+        personClass: "person-i",
+        options: ["o", "as"],
+        audioWord: "tomo"
+      },
+      {
+        stem: "tomar",
+        base: "tom",
+        answer: "as",
+        translation: ["You", "take"],
+        personClass: "person-you",
+        options: ["o", "as"],
+        audioWord: "tomas"
+      }
+    ];
+
+    const state = {
+      index: 0,
+      answered: false,
+      locked: false
+    };
+
+    const questionCard = document.querySelector("#questionCard");
+    const app = document.querySelector(".phone");
+    const startBtn = document.querySelector("#startBtn");
+    const questionWord = document.querySelector("#questionWord");
+    const questionTranslation = document.querySelector("#questionTranslation");
+    const questionCount = document.querySelector("#questionCount");
+    const options = document.querySelector("#options");
+    const continueBtn = document.querySelector("#continueBtn");
+    const resetBtn = document.querySelector("#resetBtn");
+    const toast = document.querySelector("#toast");
+
+    function renderQuestion() {
+      const current = questions[state.index];
+      state.answered = false;
+      state.locked = false;
+      questionWord.innerHTML = `${current.base}<span class="blank" aria-label="blank">&nbsp;</span>`;
+      questionTranslation.innerHTML = `<span class="${current.personClass}">${current.translation[0]}</span> ${current.translation[1]}`;
+      questionCount.textContent = `${state.index + 1} / ${questions.length}`;
+      continueBtn.classList.remove("show");
+      toast.textContent = "";
+      options.innerHTML = current.options.map(option => (
+        `<button class="option" type="button" data-answer="${option}">${option}</button>`
+      )).join("");
+      options.querySelectorAll(".option").forEach(button => {
+        button.addEventListener("click", () => handleAnswer(button));
+      });
+    }
+
+    function fillAnswer(answer) {
+      const current = questions[state.index];
+      questionWord.innerHTML = `${current.base}<span class="blank filled">${answer}</span>`;
+    }
+
+    function setOptionsDisabled(disabled) {
+      options.querySelectorAll(".option").forEach(button => {
+        button.disabled = disabled;
+      });
+    }
+
+    function handleAnswer(button) {
+      if (state.locked) return;
+
+      const current = questions[state.index];
+      const selected = button.dataset.answer;
+
+      if (selected !== current.answer) {
+        state.locked = true;
+        button.classList.add("wrong");
+        playFeedbackSound("wrong");
+        toast.textContent = "Try again";
+        window.setTimeout(() => {
+          button.classList.remove("wrong");
+          toast.textContent = "";
+          state.locked = false;
+        }, 620);
+        return;
+      }
+
+      state.locked = true;
+      state.answered = true;
+      setOptionsDisabled(true);
+      button.classList.add("correct");
+      fillAnswer(current.answer);
+      questionCard.classList.add("correct-pulse");
+      playFeedbackSound("correct");
+      speakSpanish(current.audioWord);
+      toast.textContent = current.audioWord;
+
+      window.setTimeout(() => {
+        questionCard.classList.remove("correct-pulse");
+        if (state.index < questions.length - 1) {
+          goNextQuestion();
+        } else {
+          finishQuestionSet();
+        }
+      }, 1050);
+    }
+
+    function goNextQuestion() {
+      questionCard.classList.add("switching");
+      window.setTimeout(() => {
+        state.index += 1;
+        questionCard.classList.remove("switching");
+        renderQuestion();
+      }, 260);
+    }
+
+    function finishQuestionSet() {
+      options.innerHTML = "";
+      continueBtn.classList.add("show");
+      toast.textContent = "";
+    }
+
+    function resetDemo(showPrep = false) {
+      state.index = 0;
+      state.locked = false;
+      state.answered = false;
+      if (showPrep) {
+        app.classList.add("prep-mode");
+        scrollToTop();
+      }
+      questionCard.classList.remove("switching", "correct-pulse");
+      renderQuestion();
+    }
+
+    function scrollToExerciseStart() {
+      window.setTimeout(() => {
+        const targetTop = Math.max(0, document.querySelector(".board").offsetTop - 12);
+        app.scrollTo({ top: targetTop, behavior: "smooth" });
+        window.scrollTo({ top: targetTop, behavior: "smooth" });
+      }, 80);
+    }
+
+    function scrollToTop() {
+      window.setTimeout(() => {
+        app.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 20);
+    }
+
+    function playFeedbackSound(type) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+
+      const context = new AudioContext();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+
+      oscillator.type = "sine";
+      oscillator.frequency.value = type === "correct" ? 740 : 180;
+      gain.gain.setValueAtTime(0.0001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.22);
+      oscillator.start();
+      oscillator.stop(context.currentTime + 0.24);
+    }
+
+    function speakSpanish(word) {
+      if (!("speechSynthesis" in window)) return;
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(word);
+      const voices = window.speechSynthesis.getVoices();
+      utterance.voice = voices.find(voice => voice.lang.toLowerCase().startsWith("es")) || null;
+      utterance.lang = utterance.voice ? utterance.voice.lang : "es-ES";
+      utterance.rate = 0.82;
+      utterance.pitch = 1;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    continueBtn.addEventListener("click", () => {
+      toast.textContent = "Continue tapped";
+    });
+
+    startBtn.addEventListener("click", () => {
+      app.classList.remove("prep-mode");
+      resetDemo();
+      scrollToExerciseStart();
+    });
+
+    resetBtn.addEventListener("click", () => resetDemo(true));
+
+    renderQuestion();
+  </script>
+</body>
+</html>
